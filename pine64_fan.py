@@ -2,7 +2,7 @@
 
 # Basic pine64 fan controller based on schematics by MarkHaysHarris777
 # found at the pine64 forum http://forum.pine64.org/showthread.php?tid=1854
-# 
+
 # You can use this script in any manner that suits you though remember at all 
 # times that by using it you agree that you use it at your own risk and neither 
 # I nor anybody else except for yourself is to be held responsible in case 
@@ -56,14 +56,12 @@ def rotation_on():
 
 	GPIO.output(PIN_NUMBER, True)
 	rotating = True
-	# print '+'
 
 def rotation_off():
 	global rotating
 
 	GPIO.output(PIN_NUMBER, False)
 	rotating = False
-	# print '-'
 
 def report(on_off, temp, state):
 	print 'Fan %s at %i Celsius with CPU state %i' % (
