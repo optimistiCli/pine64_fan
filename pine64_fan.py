@@ -13,10 +13,12 @@ from time import sleep
 import RPi.GPIO as GPIO
 import random
 import signal
+import logging
 
 
 TEMP_PATH = '/sys/devices/virtual/thermal/thermal_zone0/temp'
 STATE_PATH = '/sys/devices/virtual/thermal/cooling_device0/cur_state'
+LOG_PATH = '/var/log/pine64_fan.log'
 PIN_NUMBER = 23
 TEMP_OFF = 47
 TEMP_ON = 62
@@ -64,14 +66,14 @@ def rotation_off():
 	rotating = False
 
 def report(on_off, temp, state):
-	print 'Fan %s at %i Celsius with CPU state %i' % (
+	logging.info('Fan %s at %i Celsius with CPU state %i' % (
 			'ON' if on_off else 'OFF',
 			temp,
 			state
-			)
+			))
 
 def finish(reason):
-	print 'Finishing pine64 fan controller due to %s' % reason
+	logging.info('Finishing pine64 fan controller due to %s' % reason)
 	rotation_off()
 	GPIO.cleanup()
 	quit()
@@ -81,7 +83,16 @@ def on_sigterm(signum, frame):
 
 
 def run():
-	print 'Starting pine64 fan controller for pin %i with on/off temperatures %i/%i Celsius' % (PIN_NUMBER, TEMP_ON, TEMP_OFF)
+	logging.basicConfig(
+			format='%(levelname)s:%(message)s',
+			filename=LOG_PATH,
+			level=logging.INFO
+			)
+
+	logging.info(
+			'Starting pine64 fan controller for pin %i with on/off temperatures %i/%i Celsius'
+			% (PIN_NUMBER, TEMP_ON, TEMP_OFF)
+			)
 
 	GPIO.setwarnings(False)
 	GPIO.setmode(GPIO.BCM)

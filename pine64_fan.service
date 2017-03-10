@@ -4,7 +4,7 @@ After=multi-user.target
 
 [Service]
 Type=idle
-ExecStart=/usr/bin/python /usr/local/bin/pine64_fan.py > /var/log/pine64_fan.log 2>&1
+ExecStart=/usr/bin/python /usr/local/bin/pine64_fan.py
 
 [Install]
 WantedBy=multi-user.target
