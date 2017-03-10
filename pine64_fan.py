@@ -84,7 +84,7 @@ def on_sigterm(signum, frame):
 
 def run():
 	logging.basicConfig(
-			format='%(levelname)s:%(message)s',
+			format='%(asctime)s\t%(message)s',
 			filename=LOG_PATH,
 			level=logging.INFO
 			)
