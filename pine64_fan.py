@@ -14,6 +14,8 @@ import RPi.GPIO as GPIO
 import random
 import signal
 import logging
+import os
+import sys
 
 
 TEMP_PATH = '/sys/devices/virtual/thermal/thermal_zone0/temp'
@@ -75,9 +77,9 @@ def report(on_off, temp, state):
 
 def write_pid_file():
 	pid = str(os.getpid())
-	pid.file = open(PID_PATH, 'w')
-	pid.file.write(pid)
-	pid.file.close()
+	pid_file = open(PID_PATH, 'w')
+	pid_file.write(pid)
+	pid_file.close()
 
 def remove_pid_file():
 	os.remove(PID_PATH)
@@ -86,17 +88,19 @@ def finish(reason):
 	logging.info('Finishing pine64 fan controller due to %s' % reason)
 	rotation_off()
 	GPIO.cleanup()
+	remove_pid_file()
 	quit()
 
 def on_sigterm(signum, frame):
 	finish('sigterm')
 
-def check_if_running():
-	if os.path.exists(PID_PATH):
-		finish('already running')
-
+def already_running():
+	return os.path.exists(PID_PATH)
 
 def run():
+	if already_running():
+		sys.exit('Can not run more then 1 instance')
+
 	logging.basicConfig(
 			format='%(asctime)s\t%(message)s',
 			filename=LOG_PATH,
@@ -107,6 +111,8 @@ def run():
 			'Starting pine64 fan controller for pin %i with on/off temperatures %i/%i Celsius'
 			% (PIN_NUMBER, TEMP_ON, TEMP_OFF)
 			)
+
+	write_pid_file()
 
 	GPIO.setwarnings(False)
 	GPIO.setmode(GPIO.BCM)
