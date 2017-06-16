@@ -10,6 +10,11 @@ if ! python -c 'import RPi.GPIO' 2>/dev/null ; then
 	exit 2
 fi
 
+if ! systemctl 2>/dev/null | grep -qe '-\.mount' ; then
+	echo Please make sure your system uses systemd
+	exit 3
+fi
+
 cat pine64_fan.py > /usr/local/bin/pine64_fan.py
 chmod 755 /usr/local/bin/pine64_fan.py
 
