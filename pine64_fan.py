@@ -19,6 +19,7 @@ import logging
 TEMP_PATH = '/sys/devices/virtual/thermal/thermal_zone0/temp'
 STATE_PATH = '/sys/devices/virtual/thermal/cooling_device0/cur_state'
 LOG_PATH = '/var/log/pine64_fan.log'
+PID_PATH = '/var/run/pine64_fan.pid'
 PIN_NUMBER = 23
 TEMP_OFF = 47
 TEMP_ON = 62
@@ -72,6 +73,15 @@ def report(on_off, temp, state):
 			state
 			))
 
+def write_pid_file():
+	pid = str(os.getpid())
+	pid.file = open(PID_PATH, 'w')
+	pid.file.write(pid)
+	pid.file.close()
+
+def remove_pid_file():
+	os.remove(PID_PATH)
+
 def finish(reason):
 	logging.info('Finishing pine64 fan controller due to %s' % reason)
 	rotation_off()
@@ -81,6 +91,10 @@ def finish(reason):
 def on_sigterm(signum, frame):
 	finish('sigterm')
 
+
+def check_if_running():
+	if os.path.exists(PID_PATH)
+		finish('already running')
 
 def run():
 	logging.basicConfig(
