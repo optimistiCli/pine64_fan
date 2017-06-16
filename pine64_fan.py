@@ -91,10 +91,10 @@ def finish(reason):
 def on_sigterm(signum, frame):
 	finish('sigterm')
 
-
 def check_if_running():
 	if os.path.exists(PID_PATH)
 		finish('already running')
+
 
 def run():
 	logging.basicConfig(
