@@ -22,4 +22,10 @@ cat pine64_fan.service > /lib/systemd/system/pine64_fan.service
 chmod 644 /lib/systemd/system/pine64_fan.service
 
 systemctl daemon-reload
+sleep 1
+
 systemctl enable pine64_fan.service
+sleep 1
+
+systemctl start pine64_fan.service
+sleep 1
