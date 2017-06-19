@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Simple script to print some health data for Pine64. Some details were
 # shamelessly stolen from http://pastebin.com/bSTYCQ5u. Thanks tkaiser.
@@ -7,7 +7,6 @@
 # or call `sudo pine64_health.sh -w` to get updates every 0.5 seconds (default).
 #
 
-set -e
 
 if [ "$(id -u)" -ne "0" ]; then
 	echo "This script requires root."
@@ -16,8 +15,13 @@ fi
 
 GPU_ADDR="1c40000.gpu"
 
+INTERVALS=(.1 .25 .5 1 2)
+
+interval_num=2
+buffer=''
+
 print() {
-	printf "%-15s: %s %s\n" "$1" "$2 $3" "$4"
+	buffer="$buffer$(printf '%-15s: %s %s' "$1" "$2 $3" "$4")"$'   \n'
 }
 
 cpu_frequency() {
@@ -98,20 +102,29 @@ gpu_voltage() {
 	print "GPU voltage" $v "V"
 }
 
-cpu_load() {
-	print "Load average" "$(uptime | sed 's/.*load[[:blank:]]\+average:[[:blank:]]\+//')"
+load_average() {
+	if [ ! -e /proc/loadavg ]; then
+		return
+	fi
+	local lu="$(sed 's%[[:blank:]]\+[[:digit:]]\+/.*%%' < /proc/loadavg)"
+	print "Load average" "$lu"
+	# print "Load average" "$(uptime | sed 's/.*load[[:blank:]]\+average:[[:blank:]]\+//')"
 }
 
 fan_status() {
 	if [ ! -e /var/run/pine64_fan.pid ]; then
 		return
 	fi
-	local fan="$(if tail -n 11 < /var/log/pine64_fan.log | grep -iq 'fan[[:blank:]]\+on[[:blank:]]' ; then echo 'On' ; else echo 'Off' ; fi)"
+	local fan="$(if tail -n 1 < /var/log/pine64_fan.log | grep -iq 'fan[[:blank:]]\+on[[:blank:]]' ; then echo 'On' ; else echo 'Off' ; fi)"
 	print "Fan status" $fan
 }
 
 all() {
-	cpu_load
+	buffer=''
+
+	set -e
+
+	load_average
 	cpu_frequency
 	gpu_frequency
 	cpu_count
@@ -125,32 +138,86 @@ all() {
 	cooling_limit
 	bat_capacity
 	fan_status
+
+	echo -n "$buffer"
+
+	set +e
 }
 
 usage() {
 	echo "Usage: $0 [-w] [-h]"
 }
 
-WATCH=""
-for i in "$@"; do
-	case $i in
-	-w)
-		WATCH=1
-		shift
-		;;
-	-h|--help)
-		usage
-		exit 0
-		;;
-	*)
-		usage
-		exit 1
-		;;
-	esac
-done
+go_faster() {
+	if [ "$interval_num" -gt 0 ] ; then
+		((interval_num--))
+	fi
+}
 
-if [ -n "$WATCH" ]; then
-	exec watch -n0.5 "$0"
-else
-	all
-fi
+slow_down() {
+	local t=${#INTERVALS[@]}
+	((t--))
+	if [ "$interval_num" -lt $t ] ; then
+		((interval_num++))
+	fi
+}
+
+run() {
+	local inp=''
+
+	clear
+	while true ; do
+		all
+
+		echo -ne $'                                                          \r'
+		read -s -p "Updates ${INTERVALS[$interval_num]}s :: [q] Quit, [+/-] Poll more/less often : " -n 1 -t ${INTERVALS[$interval_num]} inp
+		if [ "$?" -lt 128 ] ; then
+
+			case "$inp" in
+				[qQ]*)
+					echo 'q'
+					return
+					;;
+
+				[\-_]*)
+					echo -n '-'
+					slow_down
+					;;
+
+				[+=]*)
+					echo -n '+'
+					go_faster
+					;;
+			esac
+		fi
+
+		lines_back='\e['$(echo "$buffer" | wc -l)'A'
+		echo -en "\r$lines_back"
+	done
+}
+
+#WATCH=""
+#for i in "$@"; do
+#	case $i in
+#	-w)
+#		WATCH=1
+#		shift
+#		;;
+#	-h|--help)
+#		usage
+#		exit 0
+#		;;
+#	*)
+#		usage
+#		exit 1
+#		;;
+#	esac
+#done
+#
+#if [ -n "$WATCH" ]; then
+#	exec watch -n0.5 "$0"
+#else
+#	all
+#fi
+
+run
