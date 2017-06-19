@@ -18,7 +18,8 @@ import os
 import sys
 
 
-TEMP_PATH = '/sys/devices/virtual/thermal/thermal_zone0/temp'
+CPU_TEMP_PATH = '/sys/devices/virtual/thermal/thermal_zone0/temp'
+GPU_TEMP_PATH = '/sys/devices/1c40000.gpu/dvfs/tempctrl'
 STATE_PATH = '/sys/devices/virtual/thermal/cooling_device0/cur_state'
 LOG_PATH = '/var/log/pine64_fan.log'
 PID_PATH = '/var/run/pine64_fan.pid'
@@ -32,29 +33,33 @@ low_mid_temp = (TEMP_OFF + TEMP_ON) / 2
 high_mid_temp = low_mid_temp + 1
 
 
-def should_start(temp, state):
+def should_start(cpu_temp, gpu_temp, state):
 	if state > 0:
 		return True
 
-	if temp < high_mid_temp:
+	higher_temp = max(cpu_temp, gpu_temp)
+
+	if higher_temp < high_mid_temp:
 		return False
 
-	if temp > TEMP_ON:
+	if higher_temp > TEMP_ON:
 		return True
 
-	return random.randint(0,101) <= 100 * (temp - high_mid_temp) / (TEMP_ON - high_mid_temp)
+	return random.randint(0,101) <= 100 * (higher_temp - high_mid_temp) / (TEMP_ON - high_mid_temp)
 
-def should_stop(temp, state):
+def should_stop(cpu_temp, gpu_temp, state):
 	if state > 0:
 		return False
 
-	if temp > low_mid_temp:
+	higher_temp = max(cpu_temp, gpu_temp)
+
+	if higher_temp > low_mid_temp:
 		return False
 
-	if temp < TEMP_OFF:
+	if higher_temp < TEMP_OFF:
 		return True
 
-	return random.randint(0,101) <= 100 - 100 * (temp - TEMP_OFF) / (low_mid_temp - TEMP_OFF)
+	return random.randint(0,101) <= 100 - 100 * (higher_temp - TEMP_OFF) / (low_mid_temp - TEMP_OFF)
 
 def rotation_on():
 	global rotating
@@ -68,11 +73,12 @@ def rotation_off():
 	GPIO.output(PIN_NUMBER, False)
 	rotating = False
 
-def report(on_off, temp, state):
-	logging.info('Fan %s at %i Celsius with CPU state %i' % (
+def report(on_off, cpu_temp, gpu_temp, state):
+	logging.info('Fan %s with CPU %i C / %i GPU %i C' % (
 			'ON' if on_off else 'OFF',
-			temp,
-			state
+			cpu_temp,
+			state,
+			gpu_temp
 			))
 
 def write_pid_file():
@@ -96,6 +102,13 @@ def on_sigterm(signum, frame):
 
 def already_running():
 	return os.path.exists(PID_PATH)
+
+def get_gpu_temp():
+	gpu_temp_file = open(GPU_TEMP_PATH)
+	gpu_temp = int(gpu_temp_file.read().split()[-1])
+	gpu_temp_file.close()
+
+	return gpu_temp
 
 def run():
 	if already_running():
@@ -124,20 +137,22 @@ def run():
 
 	try:
 		while True:
-			temp_file = open(TEMP_PATH)
-			temp = int(temp_file.read())
-			temp_file.close()
+			cpu_temp_file = open(CPU_TEMP_PATH)
+			cpu_temp = int(cpu_temp_file.read())
+			cpu_temp_file.close()
 
 			state_file = open(STATE_PATH)
 			state = int(state_file.read())
 			state_file.close()
 
-			if rotating and should_stop(temp, state):
+			gpu_temp = get_gpu_temp()
+
+			if rotating and should_stop(cpu_temp, gpu_temp, state):
 				rotation_off()
-				report(False, temp, state)
-			elif not rotating and should_start(temp, state):
+				report(False, cpu_temp, gpu_temp, state)
+			elif not rotating and should_start(cpu_temp, gpu_temp, state):
 				rotation_on()
-				report(True, temp, state)
+				report(True, cpu_temp, gpu_temp, state)
 
 			sleep(1)
 	except KeyboardInterrupt:
