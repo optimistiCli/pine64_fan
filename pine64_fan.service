@@ -1,5 +1,5 @@
 [Unit]
-Description=Basic pine64 fan controller
+Description=Trivial pine64 fan controller
 After=multi-user.target
 
 [Service]

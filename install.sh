@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# This is a rather crude pine64_fan installation script for systemd
+#
 
 if [ $(id -u) -ne 0 ] ; then
 	echo Please run as root

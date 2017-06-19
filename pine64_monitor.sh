@@ -1,10 +1,8 @@
 #!/bin/bash
 #
-# Simple script to print some health data for Pine64. Some details were
-# shamelessly stolen from http://pastebin.com/bSTYCQ5u. Thanks tkaiser.
-#
-# Run this script like `sudo watch -n2 pine64_health.sh` for a 2 sec update
-# or call `sudo pine64_health.sh -w` to get updates every 0.5 seconds (default).
+# This is a fan-aware pine64 health monitoring script. The most of it was 
+# stolen quite shamelessly from longsleep's pine64_health.sh found at
+# https://github.com/longsleep/build-pine64-image/tree/master/simpleimage/platform-scripts
 #
 
 

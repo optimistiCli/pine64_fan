@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-# Basic pine64 fan controller based on schematics by MarkHaysHarris777
-# found at the pine64 forum http://forum.pine64.org/showthread.php?tid=1854
+# Trivial pine64 fan controller based on schematics by MarkHaysHarris777
+# from http://forum.pine64.org/showthread.php?tid=1854
 
 # You can use this script in any manner that suits you though remember at all 
 # times that by using it you agree that you use it at your own risk and neither 
