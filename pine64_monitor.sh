@@ -1,14 +1,14 @@
 #!/bin/bash
 #
-# This is a fan-aware pine64 health monitoring script. The most of it was 
+# This is a fan-aware pine64 health monitoring script. The most of it was
 # stolen quite shamelessly from longsleep's pine64_health.sh found at
 # https://github.com/longsleep/build-pine64-image/tree/master/simpleimage/platform-scripts
 #
 
 
 if [ "$(id -u)" -ne "0" ]; then
-	echo Please run as root
-	exit 1
+	sudo "$0"
+	exit $?
 fi
 
 GPU_ADDR="1c40000.gpu"
